@@ -1,12 +1,15 @@
+from dotenv import load_dotenv
+load_dotenv(".env.local") 
+
 import json
 from lambda_function import lambda_handler
 
-# API Gateway HTTP API가 Lambda로 넘겨주는 형태랑 비슷하게 구성
+# ALB or API Gateway로 Callback 받은 값을 시뮬레이션하는 테스트 코드
 mock_event = {
     "queryStringParameters": {
         "code": "TESTCODE123",
-        "state": "dev-secret-abc",
-        "mall_id": "mallA"
+        "state": "devsecret",
+        "mall_id": "testmall"
     }
 }
 

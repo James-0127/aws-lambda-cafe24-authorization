@@ -1,8 +1,6 @@
 import os
 import json
-from datetime import datetime, timezone
-import psycopg
-from psycopg.rows import dict_row
+from db import execute_insert_authcode
 
 if os.environ.get("AWS_EXECUTION_ENV") is None:
     try:
@@ -36,39 +34,8 @@ def lambda_handler(event, context):
             "message": "Invalid state"
         })
 
-    pg_host = os.environ.get("PGHOST")
-    pg_port = os.environ.get("PGPORT", "5432")
-    pg_user = os.environ.get("PGUSER")
-    pg_password = os.environ.get("PGPASSWORD")
-    pg_database = os.environ.get("PGDATABASE")
-
-    if not all([pg_host, pg_port, pg_user, pg_password, pg_database]):
-        return _json_response(500, {
-            "ok": False,
-            "message": "Database environment variables are not fully set"
-        })
-
-    dsn = (
-        f"postgresql://{pg_user}:{pg_password}"
-        f"@{pg_host}:{pg_port}/{pg_database}"
-    )
-
     try:
-        with psycopg.connect(
-            dsn,
-            sslmode="require",
-            row_factory=dict_row
-        ) as conn:
-            with conn.cursor() as cur:
-                insert_sql = """
-                    INSERT INTO cafe24.authorization_codes (code, state, received_at)
-                    VALUES (%s, %s, %s)
-                    RETURNING id, received_at;
-                """
-                now_ts = datetime.now(timezone.utc)
-                cur.execute(insert_sql, (code, state, now_ts))
-                row = cur.fetchone()
-                conn.commit()
+        row = execute_insert_authcode(code, state)
 
         return _json_response(200, {
             "ok": True,
